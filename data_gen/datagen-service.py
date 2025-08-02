@@ -6,6 +6,10 @@ from dataclasses import dataclass
 import anthropic
 from anthropic import Anthropic
 import logging
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -183,7 +187,7 @@ if __name__ == "__main__":
         # Generate 50 personas (10 batches of 5 each)
         personas = service.generate_personas_sync(
             domain_context=domain_context, 
-            count=50, 
+            count=10, 
             filename="b2b_saas_personas"
         )
         
