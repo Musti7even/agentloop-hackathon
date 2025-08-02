@@ -202,8 +202,8 @@ if __name__ == "__main__":
     try:
         personas = service.generate_personas_sync(
             domain_context=domain_context, 
-            count=20, 
-            filename="b2b_saas_personas"
+            count=100, 
+            filename="b2b_saas_personas_large"
         )
         
         # Print first few generated personas
