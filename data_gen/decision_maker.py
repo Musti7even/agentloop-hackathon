@@ -1,49 +1,23 @@
 import os
 import json
 import anthropic
-from typing import Dict, TypedDict, List
-import logging
+from typing import Dict, TypedDict
 from dotenv import load_dotenv
 
 load_dotenv()
-
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
 
 class DecisionResponse(TypedDict):
     """Structure for decision response with reasoning."""
     decision: bool
     reasoning: str
 
-default_system_prompt = """You are an experienced SMB decision maker evaluating cold emails.
-
-Consider these factors:
-1. Relevance to business type and current needs
-2. Legitimacy and professionalism of sender
-3. Clear value proposition
-4. Reasonable resource requirements
-5. Alignment with business goals
-
-Respond with valid JSON only, using this exact structure:
-{{
-  "decision": true/false,
-  "reasoning": "Brief explanation of your decision"
-}}
-
-The decision field is boolean (true/false) and reasoning is a string explanation.
-
-{persona}
-
-Should this SMB respond to this cold email?"""
-
 
 def decide_response(persona: str, message: str) -> DecisionResponse:
     """
-    cold email decision maker using Claude Sonnet 4.0 with structured output.
+    B2B professional cold email decision maker using Claude Sonnet 4.0 with structured output.
     
     Args:
-        persona: persona of the person that you want to reach out to and who decides if to resposne or not
+        persona: String containing B2B professional persona information
         message: The cold email message content
         
     Returns:
@@ -53,7 +27,7 @@ def decide_response(persona: str, message: str) -> DecisionResponse:
         ValueError: If required inputs are missing or invalid
         Exception: If API call fails
     """
-    if not persona:
+    if not persona or not persona.strip():
         raise ValueError("Persona cannot be empty")
     if not message or not message.strip():
         raise ValueError("Message cannot be empty")
@@ -64,7 +38,31 @@ def decide_response(persona: str, message: str) -> DecisionResponse:
     
     client = anthropic.Anthropic(api_key=api_key)
 
-    system_prompt = default_system_prompt.format(persona=persona)
+    system_prompt = """You are an experienced B2B professional evaluating cold outreach emails.
+
+Consider these factors:
+1. Relevance to your role, company, and current challenges
+2. Legitimacy and professionalism of the sender
+3. Clear value proposition that addresses your pain points
+4. Reasonable resource requirements and implementation effort
+5. Alignment with your decision-making style and preferences
+6. Timing and approach matching your communication preferences
+
+Respond with valid JSON only, using this exact structure:
+{
+  "decision": true,
+  "reasoning": "Brief explanation of your decision"
+}
+
+The decision field is boolean (true/false) and reasoning is a string explanation."""
+
+    user_prompt = f"""Your Persona:
+{persona}
+
+Cold Email Message:
+{message}
+
+Based on your persona, role, responsibilities, communication preferences, pain points, and decision-making style, would you respond positively to this cold email? Consider whether this message would catch your attention and prompt you to engage."""
 
     try:
         response = client.messages.create(
@@ -75,15 +73,17 @@ def decide_response(persona: str, message: str) -> DecisionResponse:
             messages=[
                 {
                     "role": "user",
-                    "content": [{"type": "text", "text": message}]
+                    "content": [{"type": "text", "text": user_prompt}]
                 },
+                {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "{"}]
+                }
             ]
         )
         
         # Parse structured JSON response
-        response_text = response.content[0].text.strip()
-        logger.debug(f"Raw response: {response_text[:200]}...")
-        
+        response_text = "{" + response.content[0].text.strip()
         try:
             parsed_response = json.loads(response_text)
             return {
@@ -91,38 +91,12 @@ def decide_response(persona: str, message: str) -> DecisionResponse:
                 'reasoning': str(parsed_response.get('reasoning', 'No reasoning provided'))
             }
         except (json.JSONDecodeError, ValueError, TypeError) as parse_error:
-            logger.warning(f"JSON parsing failed for response: {response_text[:100]}")
-            logger.warning(f"Parse error: {parse_error}")
-            
-            # Enhanced fallback parsing
+            # Fallback parsing if JSON is malformed
             text = response_text.lower()
-            if '"decision": true' in text or '"decision":true' in text:
-                decision = True
-            elif '"decision": false' in text or '"decision":false' in text:
-                decision = False
-            else:
-                decision = "true" in text or "yes" in text or "respond" in text
-            
-            # Try to extract reasoning if available
-            reasoning = "Could not parse structured response"
-            if '"reasoning"' in text:
-                try:
-                    # Try to extract reasoning text between quotes
-                    start = text.find('"reasoning"')
-                    if start != -1:
-                        colon_pos = text.find(':', start)
-                        if colon_pos != -1:
-                            quote_start = text.find('"', colon_pos)
-                            if quote_start != -1:
-                                quote_end = text.find('"', quote_start + 1)
-                                if quote_end != -1:
-                                    reasoning = response_text[quote_start + 1:quote_end]
-                except:
-                    pass
-            
+            decision = "true" in text or "yes" in text
             return {
                 'decision': decision,
-                'reasoning': reasoning
+                'reasoning': f"Fallback parsing used due to malformed response: {parse_error}"
             }
     except Exception as e:
         raise Exception(f"API call failed: {e}")
