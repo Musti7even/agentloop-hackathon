@@ -3,7 +3,6 @@ import json
 import asyncio
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
-import anthropic
 from anthropic import Anthropic
 import logging
 from dotenv import load_dotenv
@@ -135,23 +134,40 @@ Return nothing else except the JSON array of strings.
         return asyncio.run(self.generate_personas(domain_context, count, filename))
 
     def save_personas_to_file(self, personas: List[str], filename: str) -> None:
-        """Save generated personas to a JSON file in data/personas directory"""
+        """Save generated personas to a JSON file in data/personas directory with train/eval split"""
         try:
             # Ensure filename has .json extension
             if not filename.endswith('.json'):
                 filename += '.json'
             
-            filepath = os.path.join(self.data_dir, filename)
+            # Calculate the split point (80% for training)
+            split_index = int(len(personas) * 0.8)
+            train_personas = personas[:split_index]
+            eval_personas = personas[split_index:]
             
-            # Delete old file if it exists
-            if os.path.exists(filepath):
-                os.remove(filepath)
-                logger.info(f"Deleted existing file: {filepath}")
+            # Create filenames for train and eval sets
+            train_filename = filename.replace('.json', '_train.json')
+            eval_filename = filename.replace('.json', '_eval.json')
             
-            with open(filepath, 'w', encoding='utf-8') as f:
-                json.dump(personas, f, indent=2, ensure_ascii=False)
+            train_filepath = os.path.join(self.data_dir, train_filename)
+            eval_filepath = os.path.join(self.data_dir, eval_filename)
             
-            logger.info(f"Saved {len(personas)} personas to {filepath}")
+            # Delete old files if they exist
+            for filepath in [train_filepath, eval_filepath]:
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                    logger.info(f"Deleted existing file: {filepath}")
+            
+            # Save train set
+            with open(train_filepath, 'w', encoding='utf-8') as f:
+                json.dump(train_personas, f, indent=2, ensure_ascii=False)
+            
+            # Save eval set
+            with open(eval_filepath, 'w', encoding='utf-8') as f:
+                json.dump(eval_personas, f, indent=2, ensure_ascii=False)
+            
+            logger.info(f"Saved {len(train_personas)} personas to {train_filepath} (training set)")
+            logger.info(f"Saved {len(eval_personas)} personas to {eval_filepath} (evaluation set)")
             
         except Exception as e:
             logger.error(f"Error saving personas to file: {e}")
@@ -181,13 +197,12 @@ if __name__ == "__main__":
     # Example usage
     service = DataGenerationService()
     
-    domain_context = "B2B SaaS cold email outreach for workflow automation solutions targeting SMBs"
+    domain_context = "B2B SaaS companies that are looking for workflow automation tools because of too much operations overheads. From small startups to large enterprises."
     
     try:
-        # Generate 50 personas (10 batches of 5 each)
         personas = service.generate_personas_sync(
             domain_context=domain_context, 
-            count=10, 
+            count=20, 
             filename="b2b_saas_personas"
         )
         
