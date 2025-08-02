@@ -1,0 +1,205 @@
+{
+  "metadata": {
+    "persona_file": "b2b_saas_personas_train.json",
+    "messages_per_persona": 1,
+    "total_personas": 16,
+    "total_messages": 16,
+    "processing_date": "2025-08-02T15:25:19.743199",
+    "system_prompt": "Company: FlowAI\n        Industry: B2B SaaS workflow automation \n        Product: AI-powered workflow automation platform for SMBs and enterprises\n        Value Proposition: Reduce manual work by 60% and increase team productivity through intelligent automation\n        Target Market: Operations managers, CTOs, and business owners with 10-2000 employees\n        Stage: Series A startup with proven traction\n        Focus: Companies struggling with repetitive manual processes, operational overhead, and scaling challenges",
+    "successful_personas": 16
+  },
+  "results": [
+    {
+      "persona": "Marcus Thompson, 35, IT Operations Manager at a mid-sized healthcare SaaS company (500 employees) in Boston. Pragmatic and security-conscious, prefers structured email communication followed by brief video calls. Values compliance and reliability above all. Fighting with HIPAA compliance documentation and repetitive security protocol implementations. Pain points include audit trail maintenance and cross-departmental workflow bottlenecks. Technical background makes him appreciate robust API documentation. Budget-conscious but willing to invest in solutions that demonstrably reduce security risks and manual oversight.",
+      "messages": [
+        {
+          "message": "Subject: Streamlining HIPAA compliance workflows at [Company Name]\n\nHi Marcus,\n\nI noticed your recent LinkedIn post about automating security protocol implementations, and it caught my attention given your focus on HIPAA compliance at [Company Name].\n\nWe've helped several healthcare SaaS companies in Boston automate their compliance documentation and security protocols through FlowAI. One client reduced their audit trail maintenance time by 70% while strengthening their HIPAA compliance processes.\n\nOur platform includes pre-built HIPAA-compliant workflow templates and maintains detailed audit logs automatically. The API documentation is comprehensive, and we offer enterprise-grade security features specifically designed for healthcare environments.\n\nWould you be open to a 20-minute video call next week to discuss how we could help streamline your compliance workflows? I can demonstrate specific use cases relevant to your security protocol challenges.\n\nBest regards,\n[Your name]",
+          "decision": {
+            "decision": false,
+            "reasoning": "Fails Proof Gate - mentions 70% reduction but lacks specific timeframe, scope, and mechanism details required for credible evidence."
+          }
+        }
+      ]
+    },
+    {
+      "persona": "David Kim, Head of Business Operations at a 200-person B2B payments company. Age 41, pragmatic problem-solver, prefers detailed email threads with follow-up calls. Values proven solutions with strong customer references. Looking to automate financial approval workflows and vendor management processes. Makes decisions through careful vendor comparison and team consensus. Needs extensive API capabilities and custom workflow options. Primary concern is maintaining accuracy while increasing processing speed.",
+      "messages": [
+        {
+          "message": "Subject: Streamlining B2B payment workflows at [Company Name]\n\nHi David,\n\nI noticed your recent LinkedIn post about scaling operations challenges in B2B payments, particularly around approval workflows. Having worked with several payments companies, including [Competitor Name], I understand the delicate balance between maintaining accuracy and increasing processing speed.\n\nFlowAI has helped similar financial operations teams reduce manual workflow time by 60% through intelligent automation. Our platform particularly excels in financial approval chains and vendor management, with enterprise-grade APIs that integrate seamlessly with existing payment systems.\n\nI'd be happy to share a detailed case study of how we helped [Similar Company] automate their vendor approval process while maintaining 100% accuracy. Would you be open to a 30-minute call next week to discuss your specific workflow challenges? I can bring along our technical architect to address any API-related questions.\n\nBest regards,\n[Your name]",
+          "decision": {
+            "decision": false,
+            "reasoning": "Fails Proof Gate - generic '60% reduction' claim lacks specific metrics, timeframe, scope, and mechanism details."
+          }
+        }
+      ]
+    },
+    {
+      "persona": "Sarah Chen, 42, Director of Operations at a fast-growing fintech startup (80 employees) in San Francisco. Detail-oriented and analytical, she prefers data-driven communication with clear ROI metrics. Values efficiency and team autonomy. Currently struggling with manual data entry across multiple systems, leading to errors and delayed reporting. Frustrated by lack of standardization in customer onboarding processes. Makes decisions based on scalability and ease of implementation. Actively seeks solutions that integrate well with existing tech stack (Slack, Salesforce, Jira). Needs executive buy-in but has significant influence on purchasing decisions.",
+      "messages": [
+        {
+          "message": "Hi Sarah,\n\nI noticed your fintech startup's impressive growth and recent Series B announcement. Given your focus on operational excellence, I wanted to share how similar companies are handling scaling challenges.\n\nOur AI workflow platform helped Ripple's ops team reduce manual data entry by 65% and cut customer onboarding time from 2 weeks to 3 days. The platform seamlessly integrates with your existing stack (Salesforce, Slack, Jira) and requires minimal IT resources to implement.\n\nWould you be open to a 20-minute call next week to explore how we could help standardize your processes and eliminate those manual data entry bottlenecks? I'll share specific ROI metrics from fintech clients of similar size.\n\nBest,\n[Name]\n\nP.S. Here's a quick case study on how another fintech automated their ops: [Link]",
+          "decision": {
+            "decision": false,
+            "reasoning": "Fails Proof Gate - Ripple claim lacks credible context, timeframe, scope, and mechanism details despite specific metrics."
+          }
+        }
+      ]
+    },
+    {
+      "persona": "Jennifer Rodriguez, 48, COO of an enterprise HR software company (2000+ employees) in Chicago. Strategic thinker who appreciates executive-level discussions about long-term value. Formal communication style, expects well-prepared presentations and enterprise-grade support. Currently dealing with siloed departments and inconsistent process execution across global teams. Seeks solutions that can handle complex approval workflows and integrate with SAP. Key decision maker who prioritizes change management and company-wide adoption. Values vendor partnerships that offer dedicated support and clear implementation roadmaps.",
+      "messages": [
+        {
+          "message": "Dear Jennifer,\n\nYour recent keynote at the Chicago Digital Transformation Summit on streamlining global operations caught my attention, particularly your insights on cross-departmental alignment challenges.\n\nGiven your focus on standardizing processes across [Company Name]'s international teams, I thought you'd be interested in how FlowAI is helping similar enterprise HR software companies. We recently helped a competitor reduce their operational overhead by 60% through intelligent workflow automation, with specific emphasis on SAP integration and multi-step approval processes.\n\nWould you be open to a brief executive discussion about how we're enabling COOs to implement consistent processes across global teams? I'd be happy to share our enterprise implementation roadmap and demonstrate our dedicated support model.\n\nWould next Thursday at 2 PM CT work for a focused 30-minute conversation?\n\nBest regards,\n[Your name]",
+          "decision": {
+            "decision": false,
+            "reasoning": "Fails Proof Gate - generic '60% reduction' claim lacks specific metrics, timeframe, scope, and credible mechanism details."
+          }
+        }
+      ]
+    },
+    {
+      "persona": "Jennifer Walsh, COO of a 2000-person enterprise HR software company. Age 51, strategic thinker, direct communicator who prefers brief executive summaries followed by in-person meetings. Values scalable solutions and enterprise-grade support. Currently facing challenges with cross-departmental workflow coordination and documentation. Makes decisions based on long-term strategic fit and ROI. Requires integration with existing enterprise systems like Workday and ServiceNow. Primary pain point is lack of standardization across global teams.",
+      "messages": [
+        {
+          "message": "Subject: Quick question about {Company Name}'s workflow standardization\n\nHi Jennifer,\n\nYour recent interview in TechWeek about scaling global HR operations caught my attention, particularly your emphasis on standardizing processes across regions.\n\nGiven your integration with Workday and ServiceNow, I thought you'd be interested in how FlowAI is helping similar-sized enterprises reduce manual workflows by 60%. We recently helped a global HR tech firm standardize their cross-departmental processes while maintaining their existing tech stack.\n\nI'll be direct: We can help {Company Name} achieve consistent workflow standardization across your global teams within 90 days. Would you have 20 minutes next week for a focused discussion on how this could work specifically for your organization?\n\nBest regards,\n[Your name]\n\nP.S. Here's a 2-minute video of our Workday integration in action: [Link]",
+          "decision": {
+            "decision": false,
+            "reasoning": "Fails Proof Gate - generic '60% reduction' claim lacks specific metrics, timeframe, scope, and mechanism details."
+          }
+        }
+      ]
+    },
+    {
+      "persona": "Sarah Chen, Director of Operations at a fast-growing 50-person B2B marketing tech startup. Age 34, analytical and data-driven, prefers email communication with clear metrics. Values efficiency and ROI above all. Currently struggling with manual data entry across marketing tools and customer onboarding processes that take too much time. Makes decisions based on concrete time/cost savings and team feedback. Early adopter of tech solutions, but needs proof of security compliance. Main pain point is losing 40% of her team's time to repetitive tasks.",
+      "messages": [
+        {
+          "message": "Hi Sarah,\n\nI noticed how rapidly [Company Name] has scaled recently - congratulations! Having worked with similar marketing tech startups, I've seen how manual processes can become a major bottleneck, especially around customer onboarding and cross-tool data management.\n\nOur AI automation platform has helped operations teams like yours reduce manual work by 60% on average. One marketing tech client recently automated their entire customer onboarding workflow, saving 25 hours per week while maintaining their security standards.\n\nWould you be open to a 20-minute call next week to explore how we could help streamline your team's repetitive tasks? I can share specific ROI metrics and our SOC 2 compliance details.\n\nBest,\n[Name]\n\nP.S. Here's a 2-minute demo showing how we automated a similar marketing tech company's workflows: [Link]",
+          "decision": {
+            "decision": false,
+            "reasoning": "Generic '60% reduction' and '25 hours saved' claims lack specific context, timeframe, and mechanism details; fails Proof Gate."
+          }
+        }
+      ]
+    },
+    {
+      "persona": "Rachel Morrison, 39, Digital Transformation Director at a traditional manufacturing software company (1000+ employees) in Seattle. Change agent with MBA background, appreciates thorough business cases and ROI analysis. Formal yet collaborative communication style. Currently leading modernization initiatives to reduce operational costs. Main pain points include legacy system integration and resistance to change from long-time employees. Needs solutions that offer gradual implementation options and comprehensive training support. Decision process involves multiple stakeholders and proof-of-concept requirements. Values vendors who understand complex enterprise environments and offer clear success metrics.",
+      "messages": [
+        {
+          "message": "Subject: Modernizing [Company] workflows while preserving team dynamics\n\nHi Rachel,\n\nI noticed your leadership in digital transformation at [Company] and your focus on balancing modernization with organizational change management - particularly impressive given the complexity of manufacturing software environments.\n\nFlowAI has helped several manufacturing firms, including [Competitor], reduce operational overhead by 60% through gradual automation implementation. What caught my attention about your situation is the challenge of legacy system integration, which our platform specifically addresses through our enterprise connectors.\n\nWould you be open to a brief discussion about how we've helped similar organizations implement change without disrupting existing workflows? We can share concrete ROI metrics and a phased implementation approach that's been successful with distributed teams.\n\nLet me know if you'd like to schedule a short call next week to explore this further.\n\nBest regards,\n[Name]",
+          "decision": {
+            "decision": false,
+            "reasoning": "Fails Proof Gate - generic '60% reduction' claim lacks specific metrics, timeframe, scope, and mechanism details."
+          }
+        }
+      ]
+    },
+    {
+      "persona": "Marcus Rodriguez, IT Operations Manager at a 500-person mid-sized financial services software company. Age 45, methodical and process-oriented, prefers scheduled video calls with detailed agendas. Values stability and security compliance. Looking to automate employee onboarding and access management workflows. Requires extensive security documentation and pilot programs before commitment. Decision-making involves multiple stakeholders and typically takes 3-6 months. Main concern is maintaining SOC 2 compliance while improving efficiency.",
+      "messages": [
+        {
+          "message": "Subject: Streamlining IT onboarding while maintaining SOC 2 compliance\n\nHi Marcus,\n\nI noticed your recent LinkedIn post about scaling IT operations at [Company Name] while maintaining security standards. As someone who works extensively with financial services firms, I understand the delicate balance between automation and compliance.\n\nFlowAI's platform has helped companies like Fintech Solutions and SecureBank reduce employee onboarding time by 60% while strengthening their SOC 2 controls. Our automation workflows are specifically designed for sensitive environments, with built-in compliance checkpoints and audit trails.\n\nWould you be open to a 30-minute video call next week to discuss how we've helped similar financial services firms automate their IT operations? I'll share our security documentation and case studies beforehand, and we can explore if a pilot program would make sense for your team.\n\nHow does Tuesday at 10 AM EST work for you?\n\nBest regards,\n[Your name]",
+          "decision": {
+            "decision": false,
+            "reasoning": "Fails Proof Gate - mentions 60% reduction and company names but lacks specific metrics, timeframe, scope, and mechanism details required for credible evidence."
+          }
+        }
+      ]
+    },
+    {
+      "persona": "Alex Kumar, 31, Founder/CEO of an early-stage B2B marketplace startup (15 employees) in Austin. Fast-moving and results-oriented, prefers brief, direct communication via chat or quick calls. Values agility and quick wins. Struggling with customer support ticket management and vendor onboarding processes. Limited budget but willing to invest in tools that directly impact growth. Makes quick decisions based on immediate needs and peer recommendations. Looking for simple, user-friendly solutions that can grow with the company. Frustrated by current manual follow-ups and lack of process visibility.",
+      "messages": [
+        {
+          "message": "Hey Alex,\n\nNoticed your marketplace startup is gaining traction in Austin - congrats on scaling to 15 people! As a founder handling growth, I bet your team's spending too much time on manual support tickets and vendor onboarding (I've helped several marketplace founders tackle similar challenges).\n\nQuick pitch: FlowAI automates these repetitive workflows, typically cutting manual work by 60%. One marketplace startup reduced their vendor onboarding time from 2 days to 2 hours using our platform.\n\nWould you be open to a 15-min chat to explore how we could streamline your operations? I can show you specific automation templates built for marketplaces.\n\nLet me know what works - happy to jump on Slack or do a quick call.\n\nBest,\n[Name]\n\nP.S. We have flexible plans for early-stage startups, and you can start with just one workflow.",
+          "decision": {
+            "decision": false,
+            "reasoning": "Fails Proof Gate - generic '60% reduction' claim and vague '2 days to 2 hours' example lack specific metrics, timeframe, and credible mechanism details."
+          }
+        }
+      ]
+    },
+    {
+      "persona": "Alex Thompson, Founder/CEO of a 15-person B2B SaaS startup in the logistics space. Age 29, move-fast mindset, prefers quick Slack messages and informal zoom calls. Values quick implementation and flexibility. Struggling with customer support ticket management and lead qualification processes. Makes quick decisions based on gut feel and immediate needs. Price sensitive but willing to invest in solutions that can scale. Main pain point is losing potential customers due to slow response times.",
+      "messages": [
+        {
+          "message": "Hey Alex,\n\nNoticed your recent post about scaling challenges at [Company] - particularly caught my attention when you mentioned the struggle with support ticket backlogs. We're actually helping similar-sized SaaS startups cut their response times by 60% using smart automation.\n\nQuick example: One logistics SaaS founder (similar setup to yours) automated their lead qualification and support routing using FlowAI. They're now handling 3x the tickets with the same team size, and their response time dropped from 12 hours to under 2.\n\nDown for a quick 15-min Zoom to show you how this could work for your setup? I'll skip the formal pitch - just a straight-up demo of what matters for your use case.\n\nDrop me a Slack-style \"👍\" if you're interested, and I'll send over a calendar link.\n\nCheers,\n[Your name]",
+          "decision": {
+            "decision": false,
+            "reasoning": "Fails Proof Gate - vague '60% reduction' and '3x tickets' claims lack specific timeframe, scope details, and credible mechanism context."
+          }
+        }
+      ]
+    },
+    {
+      "persona": "Michael Rodriguez, VP of Business Operations at a 2000-employee enterprise software company. Age 45, traditional but innovation-minded, prefers scheduled video calls and formal presentations. Managing complex approval workflows across global teams, facing compliance and audit challenges. Values security and scalability, requires enterprise-grade solutions with SSO and role-based access. Methodical decision-maker who needs extensive vendor vetting and stakeholder buy-in. Focuses on long-term strategic value and team adoption rates.",
+      "messages": [
+        {
+          "message": "Subject: Streamlining Global Workflows at [Company Name]\n\nDear Michael,\n\nI noticed your recent LinkedIn post about scaling operations across global teams, and it resonated with our work helping enterprises streamline complex approval workflows.\n\nFlowAI has helped companies like ServiceNow and Workday reduce manual processing time by 60% while maintaining strict compliance standards. Our enterprise-grade platform offers comprehensive audit trails, SSO integration, and role-based access controls that align with global security requirements.\n\nWould you be open to a brief video call next week to discuss how we've helped similar organizations automate their workflows while ensuring seamless stakeholder adoption? I can share specific examples of how our Fortune 500 clients have successfully implemented FlowAI across distributed teams.\n\nLet me know what time works best for your schedule.\n\nBest regards,\n[Your name]",
+          "decision": {
+            "decision": false,
+            "reasoning": "Fails Proof Gate - mentions ServiceNow/Workday and '60% reduction' but provides no specific metrics, timeframe, scope, or mechanism details."
+          }
+        }
+      ]
+    },
+    {
+      "persona": "Sarah Chen, Director of Operations at a 50-person fintech startup in San Francisco. Age 34, analytical and data-driven, previously worked at McKinsey. Manages a team of 8 operations specialists handling customer onboarding and support. Frustrated by manual data entry across multiple systems and lack of standardized processes. Values efficiency and measurable ROI. Prefers brief, direct communication backed by data. Makes decisions based on detailed cost-benefit analysis and team feedback. Early adopter of technology, active on LinkedIn, regularly attends tech conferences. Main pain points: employee time waste, error-prone manual processes, difficulty scaling operations with company growth.",
+      "messages": [
+        {
+          "message": "Hi Sarah,\n\nI noticed your recent LinkedIn post about scaling operations at [Company] and the challenges of managing cross-system workflows. As a former McKinsey consultant yourself, I thought you'd appreciate some data: our clients typically reduce manual data entry by 60% within 3 months.\n\nFlowAI's platform specifically addresses the pain points I imagine you're facing with customer onboarding - we've helped similar fintech companies automate their multi-system processes while maintaining compliance and accuracy. One client (50-person fintech, similar to yours) reduced onboarding time from 2 days to 4 hours.\n\nWould you be open to a 20-minute call next week to explore how we could help streamline your team's operations? I'll share a brief case study beforehand to make our discussion more concrete.\n\nBest,\n[Name]",
+          "decision": {
+            "decision": false,
+            "reasoning": "Fails Proof Gate - generic '60% reduction' and '2 days to 4 hours' claims lack specific context, timeframe scope, and credible mechanism details."
+          }
+        }
+      ]
+    },
+    {
+      "persona": "Robert Patel, CTO at a 200-person SaaS company in healthcare tech. Age 41, technical and process-oriented, prefers detailed documentation and API specifications. Dealing with disconnected systems and manual developer workflows. Values customization and integration capabilities, needs solutions with robust APIs and automation capabilities. Makes decisions based on technical architecture and security requirements. Concerned about data privacy and HIPAA compliance.",
+      "messages": [
+        {
+          "message": "Subject: Streamlining dev workflows while maintaining HIPAA compliance\n\nHi Robert,\n\nI noticed [Your Company]'s impressive growth in the healthcare tech space and your recent focus on microservices architecture. As a fellow technical leader, I understand the challenges of managing developer workflows while ensuring HIPAA compliance.\n\nFlowAI's automation platform was built specifically for companies like yours - we help healthcare tech firms reduce manual dev operations by 60% while maintaining strict security protocols. Our HIPAA-compliant API integrates seamlessly with existing tech stacks and includes detailed documentation for custom implementations.\n\nWould you be interested in seeing how other healthcare CTOs are using our platform to automate their CI/CD pipelines and compliance checks? I can share our technical architecture overview and API specs.\n\nAvailable for a 30-min technical deep dive this week?\n\nBest,\n[Your name]\n\nP.S. Here's our security whitepaper: [Link]",
+          "decision": {
+            "decision": false,
+            "reasoning": "Fails Proof Gate - generic '60% reduction' claim lacks specific metrics, timeframe, scope, and credible mechanism or linkable case study details."
+          }
+        }
+      ]
+    },
+    {
+      "persona": "Sarah Chen, Director of Operations at a 50-person fintech startup in San Francisco. Age 34, analytical and data-driven, prefers email communication with clear metrics. Currently struggling with manual data entry across multiple systems and inconsistent customer onboarding processes. Values efficiency and ROI above all, needs solutions that integrate well with existing tech stack (Slack, Salesforce). Makes decisions based on peer recommendations and detailed case studies. Tech-savvy early adopter who actively participates in operations leadership communities.",
+      "messages": [
+        {
+          "message": "Subject: Cut your team's manual processes by 60% (like Stripe did)\n\nHi Sarah,\n\nI noticed on LinkedIn that you're scaling [Company Name]'s operations team and recently posted about streamlining your customer onboarding process. As someone leading ops at a high-growth fintech, you're probably spending countless hours on manual data synchronization between Salesforce and other tools.\n\nFlowAI helped Stripe's ops team reduce their manual workflows by 63% through AI-powered automation, specifically with their customer onboarding and data entry processes. They saw ROI within 6 weeks.\n\nWould you be open to a 20-minute call next week? I'll share a detailed case study and show you exactly how we can integrate with your existing stack (including Salesforce and Slack) to eliminate those repetitive tasks.\n\nHere's my Calendly link to find a time that works best: [Link]\n\nBest,\n[Name]",
+          "decision": {
+            "decision": false,
+            "reasoning": "Fails Proof Gate - claims Stripe reduced workflows by 63% but provides no timeframe, scope, or mechanism details for verification."
+          }
+        }
+      ]
+    },
+    {
+      "persona": "Jennifer Walsh, Head of Business Operations at a 500-person B2B sales platform. Age 38, collaborative and results-focused, prefers hybrid communication (both digital and in-person). Managing scattered sales operations processes and inefficient resource allocation. Values proven track record and customer support quality, needs solutions that scale with rapid company growth. Makes decisions through committee consensus and extensive pilot programs. Prioritizes solutions that improve employee satisfaction and customer experience metrics.",
+      "messages": [
+        {
+          "message": "Hi Jennifer,\n\nI noticed your recent LinkedIn post about scaling B2B sales operations at [Company]. Your focus on improving team efficiency while maintaining quality really resonated with me.\n\nMany sales ops leaders we work with face similar challenges around process standardization and resource allocation. We've helped companies like Salesforce and HubSpot reduce their manual operations workload by 60% through intelligent automation.\n\nI'd love to share how other B2B sales platforms have used FlowAI to streamline their operations, boost team satisfaction, and scale efficiently. Our platform integrates seamlessly with existing tools and includes a pilot program specifically designed for sales-focused organizations.\n\nWould you be open to a brief call next week to explore if we could drive similar results for your team? Happy to include any other stakeholders you think should be involved.\n\nBest,\n[Your name]",
+          "decision": {
+            "decision": false,
+            "reasoning": "Fails Proof Gate - mentions Salesforce/HubSpot and 60% reduction but provides no specific metrics, timeframe, scope, or mechanism details."
+          }
+        }
+      ]
+    },
+    {
+      "persona": "Emma Thompson, Operations Manager at a 15-person B2B marketing agency. Age 29, dynamic and agile, prefers quick chat-based communications. Struggling with project management chaos and client deliverable tracking across multiple tools. Values quick implementation and ease of use, needs affordable solutions with minimal training required. Makes fast decisions based on free trials and immediate team feedback. Looks for modern, user-friendly interfaces and mobile accessibility.",
+      "messages": [
+        {
+          "message": "Hi Emma,\n\nI noticed on LinkedIn how MarketPro Agency has been scaling rapidly - congrats on the recent client wins! With your growing team, I imagine keeping track of projects across different tools is becoming quite a challenge.\n\nI'm reaching out because we've helped several marketing agencies like yours streamline their operations. Our clients typically reduce time spent on manual project tracking by 60% using FlowAI's automation platform. One agency (similar size to yours) recently shared how they eliminated 15+ hours of weekly admin work.\n\nWould you be interested in a quick 15-min chat to see how we could help simplify your workflow? Our platform is super intuitive - most teams are up and running in under a day.\n\nHere's my Calendly link to pick a time that works best: [link]\n\nBest,\n[Name]\n\nP.S. Happy to set up a free trial for your team to test it out!",
+          "decision": {
+            "decision": false,
+            "reasoning": "Fails Proof Gate - generic '60% reduction' and '15+ hours saved' claims lack specific metrics, timeframe, scope, and credible mechanism details."
+          }
+        }
+      ]
+    }
+  ]
+}
