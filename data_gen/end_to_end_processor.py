@@ -15,9 +15,11 @@ Usage:
 import json
 import argparse
 import logging
+import threading
 from datetime import datetime
 from typing import List, Dict, Any
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Import our existing services
 from generation_model import generate_message
@@ -33,14 +35,19 @@ logger = logging.getLogger(__name__)
 class EndToEndProcessor:
     """Processes personas through the complete pipeline"""
     
-    def __init__(self):
+    def __init__(self, max_workers: int = 4):
         """Initialize the processor"""
         self.data_dir = Path("data")
         self.personas_dir = self.data_dir / "personas"
         self.results_dir = self.data_dir / "results"
+        self.max_workers = max_workers
         
         # Create results directory if it doesn't exist
         self.results_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Thread-safe progress tracking
+        self.progress_lock = threading.Lock()
+        self.completed_personas = 0
         
         # Default system prompt for message generation
         self.default_system_prompt = """
@@ -118,6 +125,24 @@ class EndToEndProcessor:
             logger.error(f"Error processing persona: {e}")
             raise
     
+    def _update_progress(self, total_personas: int):
+        """Thread-safe progress update"""
+        with self.progress_lock:
+            self.completed_personas += 1
+            logger.info(f"Progress: {self.completed_personas}/{total_personas} personas completed")
+    
+    def _process_persona_wrapper(self, args):
+        """Wrapper for persona processing to enable progress tracking"""
+        persona, messages_per_persona, system_prompt, total_personas = args
+        try:
+            result = self.process_persona(persona, messages_per_persona, system_prompt)
+            self._update_progress(total_personas)
+            return result
+        except Exception as e:
+            logger.error(f"Failed to process persona: {e}")
+            self._update_progress(total_personas)
+            return None
+    
     def process_all_personas(
         self, 
         personas_filename: str, 
@@ -146,20 +171,32 @@ class EndToEndProcessor:
             
             logger.info(f"Starting processing of {len(personas)} personas")
             logger.info(f"Messages per persona: {messages_per_persona}")
+            logger.info(f"Using {self.max_workers} worker threads")
             
-            # Process each persona
+            # Reset progress counter
+            self.completed_personas = 0
+            
+            # Prepare arguments for parallel processing
+            persona_args = [
+                (persona, messages_per_persona, system_prompt, len(personas))
+                for persona in personas
+            ]
+            
+            # Process personas in parallel
             total_messages = 0
-            for i, persona in enumerate(personas, 1):
-                try:
-                    logger.info(f"Processing persona {i}/{len(personas)}")
-                    persona_result = self.process_persona(persona, messages_per_persona, system_prompt)
-                    results["results"].append(persona_result)
-                    total_messages += len(persona_result["messages"])
-                    
-                except Exception as e:
-                    logger.error(f"Failed to process persona {i}: {e}")
-                    # Continue with next persona rather than failing the entire batch
-                    continue
+            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                # Submit all tasks
+                future_to_persona = {
+                    executor.submit(self._process_persona_wrapper, args): args[0]
+                    for args in persona_args
+                }
+                
+                # Collect results as they complete
+                for future in as_completed(future_to_persona):
+                    persona_result = future.result()
+                    if persona_result is not None:
+                        results["results"].append(persona_result)
+                        total_messages += len(persona_result["messages"])
             
             # Update metadata with actual totals
             results["metadata"]["total_messages"] = total_messages
@@ -210,8 +247,15 @@ def main():
     parser.add_argument(
         "--messages-per-persona",
         type=int,
-        default=3,
+        default=1,
         help="Number of messages to generate per persona (default: 3)"
+    )
+    
+    parser.add_argument(
+        "--max-workers",
+        type=int,
+        default=10,
+        help="Maximum number of worker threads for parallel processing (default: 4)"
     )
     
     
@@ -219,7 +263,7 @@ def main():
     
     try:
         # Initialize processor
-        processor = EndToEndProcessor()
+        processor = EndToEndProcessor(max_workers=args.max_workers)
         
         
         # Process personas
