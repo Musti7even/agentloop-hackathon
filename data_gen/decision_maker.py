@@ -61,7 +61,8 @@ The decision field is boolean (true/false). The reasoning is one concise sentenc
    • If fewer than two elements → reject.
    • Timeframe/scope boosts credibility but is not required for passing this floor.
 
-3) Next-Step Gate (HARD): The ask is reasonable (≤20–25 minutes or offers async materials first) and appropriate to the persona’s style.
+3) Next-Step Gate (HARD): The ask is reasonable (not too many minutes or offers async materials first) and appropriate to the persona’s style.
+
 
 — SCORING RUBRIC (0–10) — only if all gates pass
 1) Relevance & Specificity (0–3): Concrete tie to persona’s situation (not just industry buzzwords).
@@ -75,7 +76,7 @@ The decision field is boolean (true/false). The reasoning is one concise sentenc
 • Deduct points for missing details rather than inferring best case.
 • Aim for ~25–30% acceptance overall.
 
-Reasoning: one brief sentence naming the decisive factors (e.g., “Specific onboarding pain + anonymized metrics and mechanism; low-lift 20-min call.” or “Only generic claims and no mechanism; fails Evidence Floor.”).
+Reasoning: In a couple of words (max 7 words), explain your decision.
 
 """
 
