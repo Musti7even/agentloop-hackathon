@@ -54,7 +54,9 @@ Respond with valid JSON only, using this exact structure:
   "reasoning": "Brief explanation of your decision"
 }
 
-The decision field is boolean (true/false) and reasoning is a string explanation."""
+The decision field is boolean (true/false) and reasoning is a string explanation.
+
+Please be very hard on the actualy decision and who you reply to. Your time is crucial and do not fall into every trap. It has to be a great fit."""
 
     user_prompt = f"""Your Persona:
 {persona}
