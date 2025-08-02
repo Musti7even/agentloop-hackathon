@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class DecisionResponse(TypedDict):
@@ -82,6 +82,8 @@ def decide_response(persona: str, message: str) -> DecisionResponse:
         
         # Parse structured JSON response
         response_text = response.content[0].text.strip()
+        logger.debug(f"Raw response: {response_text[:200]}...")
+        
         try:
             parsed_response = json.loads(response_text)
             return {
@@ -89,122 +91,38 @@ def decide_response(persona: str, message: str) -> DecisionResponse:
                 'reasoning': str(parsed_response.get('reasoning', 'No reasoning provided'))
             }
         except (json.JSONDecodeError, ValueError, TypeError) as parse_error:
-            # Fallback parsing if JSON is malformed
+            logger.warning(f"JSON parsing failed for response: {response_text[:100]}")
+            logger.warning(f"Parse error: {parse_error}")
+            
+            # Enhanced fallback parsing
             text = response_text.lower()
-            decision = "true" in text or "yes" in text
+            if '"decision": true' in text or '"decision":true' in text:
+                decision = True
+            elif '"decision": false' in text or '"decision":false' in text:
+                decision = False
+            else:
+                decision = "true" in text or "yes" in text or "respond" in text
+            
+            # Try to extract reasoning if available
+            reasoning = "Could not parse structured response"
+            if '"reasoning"' in text:
+                try:
+                    # Try to extract reasoning text between quotes
+                    start = text.find('"reasoning"')
+                    if start != -1:
+                        colon_pos = text.find(':', start)
+                        if colon_pos != -1:
+                            quote_start = text.find('"', colon_pos)
+                            if quote_start != -1:
+                                quote_end = text.find('"', quote_start + 1)
+                                if quote_end != -1:
+                                    reasoning = response_text[quote_start + 1:quote_end]
+                except:
+                    pass
+            
             return {
                 'decision': decision,
-                'reasoning': f"Fallback parsing used due to malformed response: {parse_error}"
+                'reasoning': reasoning
             }
     except Exception as e:
         raise Exception(f"API call failed: {e}")
-
-
-def decide_response_batch(filename: str) -> List[DecisionResponse]:
-    """
-    Batch decision maker for cold email responses.
-
-    It updates after every run the file with the new decision for each object/row within the file.
-    
-    Args:
-        filename: Name of the file containing the messages to run the decision maker on (contains also the persona)
-        
-    Returns:
-        List of DecisionResponse objects containing decisions and reasoning
-    """
-    try:
-        # Ensure filename has .json extension
-        if not filename.endswith('.json'):
-            filename += '.json'
-        
-        # Load messages file
-        messages_dir = "data/messages"
-        filepath = os.path.join(messages_dir, filename)
-        
-        if not os.path.exists(filepath):
-            raise FileNotFoundError(f"Messages file not found: {filepath}")
-        
-        logger.info(f"Loading messages from {filepath}")
-        
-        with open(filepath, 'r', encoding='utf-8') as f:
-            messages_data = json.load(f)
-        
-        if not isinstance(messages_data, list):
-            raise ValueError("Messages file must contain a JSON array")
-        
-        logger.info(f"Processing {len(messages_data)} messages for decision making")
-        
-        decisions = []
-        updated_messages = []
-        
-        for i, message_obj in enumerate(messages_data, 1):
-            try:
-                # Extract required fields
-                persona = message_obj.get('persona', '')
-                message = message_obj.get('message', '')
-                
-                if not persona or not message:
-                    logger.warning(f"Skipping message {i}: missing persona or message")
-                    # Keep original object without decision
-                    updated_messages.append(message_obj)
-                    continue
-                
-                # Make decision
-                logger.info(f"Processing message {i}/{len(messages_data)}")
-                decision_response = decide_response(persona, message)
-                
-                # Add decision to the message object
-                message_obj_with_decision = message_obj.copy()
-                message_obj_with_decision['decision'] = decision_response['decision']
-                message_obj_with_decision['decision_reasoning'] = decision_response['reasoning']
-                
-                updated_messages.append(message_obj_with_decision)
-                decisions.append(decision_response)
-                
-                logger.info(f"Decision for message {i}: {decision_response['decision']}")
-                
-            except Exception as e:
-                logger.error(f"Error processing message {i}: {e}")
-                # Keep original object without decision
-                updated_messages.append(message_obj)
-                continue
-        
-        # Save updated messages back to file
-        logger.info(f"Saving {len(updated_messages)} updated messages to {filepath}")
-        
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(updated_messages, f, indent=2, ensure_ascii=False)
-        
-        logger.info(f"Successfully processed {len(decisions)} decisions")
-        logger.info(f"Positive decisions: {sum(1 for d in decisions if d['decision'])}")
-        logger.info(f"Negative decisions: {sum(1 for d in decisions if not d['decision'])}")
-        
-        return decisions
-        
-    except Exception as e:
-        logger.error(f"Error in batch decision processing: {e}")
-        raise
-
-
-# Example usage and testing
-if __name__ == "__main__":
-    try:
-        # Test batch decision making
-        decisions = decide_response_batch("b2b_saas_personas_train_messages.json")
-        
-        print(f"\nProcessed {len(decisions)} decisions:")
-        positive_count = sum(1 for d in decisions if d['decision'])
-        negative_count = len(decisions) - positive_count
-        
-        print(f"Positive responses: {positive_count}")
-        print(f"Negative responses: {negative_count}")
-        print(f"Response rate: {positive_count/len(decisions)*100:.1f}%")
-        
-        # Show first few decisions
-        for i, decision in enumerate(decisions[:3], 1):
-            print(f"\n--- Decision {i} ---")
-            print(f"Decision: {decision['decision']}")
-            print(f"Reasoning: {decision['reasoning'][:100]}...")
-        
-    except Exception as e:
-        print(f"Error: {e}")
