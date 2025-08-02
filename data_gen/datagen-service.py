@@ -59,7 +59,7 @@ Return nothing else except the JSON array of strings.
             prompt = self._create_persona_generation_prompt(domain_context)
             
             response = self.client.messages.create(
-                model="claude-3-5-sonnet-20241022",
+                model="claude-4-sonnet-latest",
                 max_tokens=4000,
                 temperature=0.8,
                 messages=[
