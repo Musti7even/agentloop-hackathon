@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronDownIcon, PlayIcon, CheckCircleIcon, XCircleIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon } from '@heroicons/react/24/outline'
+import { ChevronDownIcon, PlayIcon, CheckCircleIcon, XCircleIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon, CommandLineIcon, SparklesIcon } from '@heroicons/react/24/outline'
+import Terminal from '@/components/Terminal'
 
 interface AnalyzedResult {
   fileName: string;
@@ -21,6 +22,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedRun, setSelectedRun] = useState<AnalyzedResult | null>(null);
+  const [terminalOpen, setTerminalOpen] = useState(false);
+  const [improvingFile, setImprovingFile] = useState<string>('');
 
   useEffect(() => {
     fetchResults();
@@ -59,6 +62,15 @@ export default function Home() {
   const latestAccuracy = results.length > 0 ? results[0].accuracy : 0;
   const improvementRuns = results.filter(r => r.isImprovementRun).length;
   const totalMessages = results.reduce((sum, r) => sum + r.totalMessages, 0);
+
+  const handleImprovePrompt = (fileName: string) => {
+    setImprovingFile(fileName);
+    setTerminalOpen(true);
+  };
+
+  const refreshResults = () => {
+    fetchResults();
+  };
 
   if (loading) {
     return (
@@ -101,6 +113,12 @@ export default function Home() {
               <div className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full">
                 <span className="text-blue-400 text-sm font-medium">{results.length} Experiments</span>
               </div>
+              <button 
+                onClick={refreshResults}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Refresh
+              </button>
               <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
                 New Experiment
               </button>
@@ -252,12 +270,21 @@ export default function Home() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <button 
-                        onClick={() => setSelectedRun(result)}
-                        className="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors"
-                      >
-                        View Details
-                      </button>
+                      <div className="flex items-center space-x-2">
+                        <button 
+                          onClick={() => setSelectedRun(result)}
+                          className="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors"
+                        >
+                          View Details
+                        </button>
+                        <button 
+                          onClick={() => handleImprovePrompt(result.fileName)}
+                          className="flex items-center space-x-1 px-2 py-1 bg-green-600/10 hover:bg-green-600/20 text-green-400 border border-green-600/20 rounded text-xs font-medium transition-colors"
+                        >
+                          <SparklesIcon className="h-3 w-3" />
+                          <span>Improve</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -369,6 +396,16 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* Terminal Component */}
+      <Terminal 
+        isOpen={terminalOpen}
+        onClose={() => {
+          setTerminalOpen(false);
+          refreshResults(); // Refresh results when terminal closes to show new improvement runs
+        }}
+        fileName={improvingFile}
+      />
     </div>
   )
 } 
