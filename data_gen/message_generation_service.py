@@ -68,8 +68,8 @@ class MessageGenerationService:
         
         Args:
             personas_filename: Name of the personas file (with or without .json)
-            system_prompt: The user context/system prompt to use for generation
-            messages_per_persona: Number of messages to generate per persona
+            system_prompt: The user context/system prompt to use for generation of the messages
+            messages_per_persona: Number of messages to generate per persona (multiplier: how many messages you want to generate for each persona)
             
         Returns:
             List of MessageData objects containing generated messages
