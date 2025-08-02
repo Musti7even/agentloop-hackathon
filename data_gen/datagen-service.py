@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from anthropic import Anthropic
 import logging
 from dotenv import load_dotenv
+from concurrent.futures import ThreadPoolExecutor
 
 # Load environment variables from .env file
 load_dotenv()
@@ -53,13 +54,13 @@ Return ONLY a valid JSON array of persona strings in this exact format:
 Return nothing else except the JSON array of strings.
 """
 
-    async def _generate_single_batch(self, domain_context: str) -> List[str]:
-        """Generate a single batch of 5 persona strings"""
+    def _generate_single_batch(self, domain_context: str) -> List[str]:
+        """Generate a single batch of 5 persona strings (synchronous)"""
         try:
             prompt = self._create_persona_generation_prompt(domain_context)
             
             response = self.client.messages.create(
-                model="claude-4-sonnet-latest",
+                model="claude-sonnet-4-20250514",
                 max_tokens=4000,
                 temperature=0.8,
                 messages=[
@@ -93,8 +94,8 @@ Return nothing else except the JSON array of strings.
             logger.error(f"Error generating personas batch: {e}")
             raise
 
-    async def generate_personas(self, domain_context: str, count: int = 50, filename: str = "personas") -> List[str]:
-        """Generate virtual personas using Claude Sonnet with batch processing"""
+    def generate_personas(self, domain_context: str, count: int = 50, filename: str = "personas") -> List[str]:
+        """Generate virtual personas using Claude Sonnet with parallel thread processing"""
         try:
             logger.info(f"Generating {count} personas for domain: {domain_context}")
             
@@ -103,17 +104,28 @@ Return nothing else except the JSON array of strings.
             if count % 5 != 0:
                 batch_count += 1
             
-            all_personas = []
-            
-            # Generate personas in batches
-            for i in range(batch_count):
-                logger.info(f"Generating batch {i+1}/{batch_count}")
-                batch_personas = await self._generate_single_batch(domain_context)
-                all_personas.extend(batch_personas)
+            # Use ThreadPoolExecutor with 4 workers for parallel processing
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                # Submit all batch generation tasks
+                future_to_batch = {
+                    executor.submit(self._generate_single_batch, domain_context): i 
+                    for i in range(batch_count)
+                }
                 
-                # Add small delay between requests to be respectful to the API
-                if i < batch_count - 1:
-                    await asyncio.sleep(1)
+                all_personas = []
+                completed_batches = 0
+                
+                # Process completed tasks as they finish
+                for future in future_to_batch:
+                    try:
+                        batch_index = future_to_batch[future]
+                        batch_personas = future.result()
+                        all_personas.extend(batch_personas)
+                        completed_batches += 1
+                        logger.info(f"Completed batch {completed_batches}/{batch_count}")
+                    except Exception as e:
+                        logger.error(f"Batch failed: {e}")
+                        raise
             
             # Trim to exact count if we generated more than requested
             all_personas = all_personas[:count]
@@ -130,8 +142,8 @@ Return nothing else except the JSON array of strings.
             raise
 
     def generate_personas_sync(self, domain_context: str, count: int = 50, filename: str = "personas") -> List[str]:
-        """Synchronous wrapper for generate_personas"""
-        return asyncio.run(self.generate_personas(domain_context, count, filename))
+        """Synchronous wrapper for generate_personas (now directly synchronous)"""
+        return self.generate_personas(domain_context, count, filename)
 
     def save_personas_to_file(self, personas: List[str], filename: str) -> None:
         """Save generated personas to a JSON file in data/personas directory with train/eval split"""
