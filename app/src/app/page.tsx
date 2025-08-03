@@ -15,23 +15,54 @@ interface AnalyzedResult {
   isImprovementRun: boolean;
   processingDate: string;
   systemPrompt: string;
+  projectId?: string;
+  projectName?: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
 }
 
 export default function Home() {
   const [results, setResults] = useState<AnalyzedResult[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+  const [switching, setSwitching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedRun, setSelectedRun] = useState<AnalyzedResult | null>(null);
   const [terminalOpen, setTerminalOpen] = useState(false);
   const [improvingFile, setImprovingFile] = useState<string>('');
 
   useEffect(() => {
+    loadProjects();
     fetchResults();
   }, []);
 
+  useEffect(() => {
+    if (selectedProject !== 'all') {
+      setSwitching(true);
+    }
+    fetchResults();
+  }, [selectedProject]);
+
+  const loadProjects = async () => {
+    try {
+      const response = await fetch('/api/projects');
+      if (response.ok) {
+        const projectsData = await response.json();
+        setProjects(projectsData);
+      }
+    } catch (error) {
+      console.error('Error loading projects:', error);
+    }
+  };
+
   const fetchResults = async () => {
     try {
-      const response = await fetch('/api/results');
+      const url = selectedProject === 'all' ? '/api/results' : `/api/results?projectId=${selectedProject}`;
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch results');
       }
@@ -41,6 +72,7 @@ export default function Home() {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
+      setSwitching(false);
     }
   };
 
@@ -110,6 +142,31 @@ export default function Home() {
               </p>
             </div>
             <div className="flex items-center space-x-3">
+              {/* Project Selector */}
+              <div className="relative">
+                <select
+                  value={selectedProject}
+                  onChange={(e) => setSelectedProject(e.target.value)}
+                  disabled={switching}
+                  className={`appearance-none bg-gray-800 border border-gray-700 text-white px-4 py-2 pr-8 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-opacity ${
+                    switching ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <option value="all">All Projects</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDownIcon className="h-4 w-4 text-gray-400 absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+                {switching && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                  </div>
+                )}
+              </div>
+              
               <div className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full">
                 <span className="text-blue-400 text-sm font-medium">{results.length} Experiments</span>
               </div>
@@ -205,6 +262,9 @@ export default function Home() {
                     Type
                   </th>
                   <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-6 py-4">
+                    Project
+                  </th>
+                  <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-6 py-4">
                     Accuracy
                   </th>
                   <th className="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-6 py-4">
@@ -237,6 +297,18 @@ export default function Home() {
                       }`}>
                         {result.isImprovementRun ? 'Improvement' : 'Baseline'}
                       </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-gray-300 font-medium">
+                          {result.projectName || 'Legacy'}
+                        </span>
+                        {result.projectId && result.projectId !== 'legacy-project' && (
+                          <span className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded">
+                            {result.projectId}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2">

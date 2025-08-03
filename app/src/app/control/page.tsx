@@ -31,7 +31,7 @@ export default function ControlDashboard() {
   const [loading, setLoading] = useState(true)
   const [showNewProjectForm, setShowNewProjectForm] = useState(false)
   const [terminalOpen, setTerminalOpen] = useState(false)
-  const [terminalType, setTerminalType] = useState<'personas' | 'improvement'>('personas')
+  const [terminalType, setTerminalType] = useState<'personas' | 'improvement' | 'evaluation'>('personas')
   const [terminalData, setTerminalData] = useState<any>({})
   
   const [newProject, setNewProject] = useState<PersonaGenerationForm>({
@@ -113,13 +113,73 @@ export default function ControlDashboard() {
     setTerminalOpen(true)
   }
 
-  const handleImprovePrompts = (project: Project) => {
-    setTerminalType('improvement')
-    setTerminalData({
-      projectId: project.id,
-      fileName: `${project.name.toLowerCase().replace(/\s+/g, '_')}_results.json`
-    })
-    setTerminalOpen(true)
+  const handleImprovePrompts = async (project: Project) => {
+    try {
+      // First, get available results files for this project
+      const response = await fetch(`/api/projects/${project.id}/results`)
+      const resultsData = await response.json()
+      
+      if (!resultsData.files || resultsData.files.length === 0) {
+        alert('No results files found for this project. Please run performance evaluation first.')
+        return
+      }
+
+      // Use the most recent results file (first in sorted list)
+      const latestResultsFile = resultsData.results[0]?.file || resultsData.files[0]
+
+      setTerminalType('improvement')
+      setTerminalData({
+        projectId: project.id,
+        resultsFile: latestResultsFile,
+        messagesPerPersona: project.config.messageGeneration.messagesPerPersona || 1
+      })
+      setTerminalOpen(true)
+      
+    } catch (error) {
+      console.error('Error loading results files:', error)
+      alert('Failed to load results files. Please try again.')
+    }
+  }
+
+  const handleEvaluatePerformance = async (project: Project) => {
+    try {
+      // First, get available persona files for this project
+      const response = await fetch(`/api/projects/${project.id}/personas`)
+      const personasData = await response.json()
+      
+      if (!personasData.files || personasData.files.length === 0) {
+        alert('No persona files found for this project. Please generate personas first.')
+        return
+      }
+
+      // Find a training file (prefer files with 'train' in the name)
+      let personaFile = personasData.files.find((file: string) => file.includes('train'))
+      
+      // If no training file found, use the first available file
+      if (!personaFile) {
+        personaFile = personasData.files[0]
+      }
+
+      // Update project status locally (will be updated by API)
+      setProjects(prev => prev.map(p => 
+        p.id === project.id 
+          ? { ...p, status: 'training' as const }
+          : p
+      ))
+
+      // Open terminal for performance evaluation
+      setTerminalType('evaluation')
+      setTerminalData({
+        projectId: project.id,
+        personaFile: personaFile,
+        messagesPerPersona: project.config.messageGeneration.messagesPerPersona || 1
+      })
+      setTerminalOpen(true)
+      
+    } catch (error) {
+      console.error('Error loading persona files:', error)
+      alert('Failed to load persona files. Please try again.')
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -155,8 +215,8 @@ export default function ControlDashboard() {
         }
       case 'personas_ready':
         return {
-          label: 'Start Training',
-          action: () => handleImprovePrompts(project),
+          label: 'Evaluate Performance',
+          action: () => handleEvaluatePerformance(project),
           icon: <BeakerIcon className="h-4 w-4" />,
           color: 'bg-purple-600 hover:bg-purple-700'
         }
@@ -442,11 +502,23 @@ export default function ControlDashboard() {
         />
       )}
 
-      {terminalType === 'improvement' && (
+      {terminalOpen && terminalType === 'improvement' && (
         <Terminal
           isOpen={terminalOpen}
           onClose={() => setTerminalOpen(false)}
-          fileName={terminalData.fileName}
+          data={terminalData}
+        />
+      )}
+
+      {terminalOpen && terminalType === 'evaluation' && (
+        <EvaluationTerminal
+          isOpen={terminalOpen}
+          onClose={() => {
+            setTerminalOpen(false)
+            // Refresh projects to get updated status
+            loadProjects()
+          }}
+          data={terminalData}
         />
       )}
     </div>
@@ -540,6 +612,119 @@ function PersonaTerminal({ isOpen, onClose, data }: { isOpen: boolean, onClose: 
             {messages.length === 0 && !isRunning && (
               <div className="text-gray-500 text-center py-8">
                 Click "Start Generation" to create personas for your project...
+              </div>
+            )}
+            
+            {messages.map((msg, index) => (
+              <div key={index} className="mb-1 flex">
+                <span className="text-gray-500 text-xs w-20">
+                  {new Date(msg.timestamp).toLocaleTimeString()}
+                </span>
+                <span className={`flex-1 ${
+                  msg.type === 'info' ? 'text-blue-400' :
+                  msg.type === 'stdout' ? 'text-green-400' :
+                  msg.type === 'stderr' ? 'text-yellow-400' :
+                  msg.type === 'error' ? 'text-red-400' :
+                  msg.type === 'success' ? 'text-emerald-400' : 'text-gray-300'
+                }`}>
+                  {msg.message}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Performance Evaluation Terminal Component
+function EvaluationTerminal({ isOpen, onClose, data }: { isOpen: boolean, onClose: () => void, data: any }) {
+  const [messages, setMessages] = useState<any[]>([])
+  const [isRunning, setIsRunning] = useState(false)
+
+  const startEvaluation = async () => {
+    if (isRunning) return
+
+    setIsRunning(true)
+    setMessages([])
+
+    try {
+      const response = await fetch('/api/evaluate-performance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+
+      const reader = response.body?.getReader()
+      if (!reader) throw new Error('No response body')
+
+      const decoder = new TextDecoder()
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n')
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6))
+              setMessages(prev => [...prev, data])
+              
+              if (data.finished) {
+                setIsRunning(false)
+              }
+            } catch (e) {
+              // Ignore invalid JSON
+            }
+          }
+        }
+      }
+    } catch (error) {
+      setMessages(prev => [...prev, {
+        type: 'error',
+        message: `Error: ${error}`,
+        timestamp: new Date().toISOString()
+      }])
+      setIsRunning(false)
+    }
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur flex items-center justify-center p-4 z-50">
+      <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-6xl h-[80vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+          <div className="flex items-center space-x-3">
+            <BeakerIcon className="h-5 w-5 text-gray-400" />
+            <h2 className="text-lg font-semibold text-white">Performance Evaluation</h2>
+          </div>
+          <div className="flex items-center space-x-3">
+            {!isRunning && (
+              <button
+                onClick={startEvaluation}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Start Evaluation
+              </button>
+            )}
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-300">
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {/* Terminal Content */}
+        <div className="flex-1 bg-black rounded-b-xl overflow-hidden">
+          <div className="p-4 h-full overflow-y-auto font-mono text-sm">
+            {messages.length === 0 && !isRunning && (
+              <div className="text-gray-500 text-center py-8">
+                Click "Start Evaluation" to test your personas and measure performance...
               </div>
             )}
             

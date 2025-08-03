@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
+import { projectManager } from '@/lib/project-manager'
 
 interface DecisionResult {
   decision: boolean;
@@ -42,9 +43,11 @@ interface AnalyzedResult {
   isImprovementRun: boolean;
   processingDate: string;
   systemPrompt: string;
+  projectId?: string;
+  projectName?: string;
 }
 
-function analyzeResultsFile(filePath: string, fileName: string): AnalyzedResult | null {
+function analyzeResultsFile(filePath: string, fileName: string, projectId?: string, projectName?: string): AnalyzedResult | null {
   try {
     const fileContent = fs.readFileSync(filePath, 'utf-8');
     const data: ResultsFile = JSON.parse(fileContent);
@@ -89,7 +92,9 @@ function analyzeResultsFile(filePath: string, fileName: string): AnalyzedResult 
       totalPersonas: data.results.length,
       isImprovementRun: data.metadata.improvement_run || false,
       processingDate: data.metadata.processing_date,
-      systemPrompt: data.metadata.system_prompt || ''
+      systemPrompt: data.metadata.system_prompt || '',
+      projectId,
+      projectName
     };
   } catch (error) {
     console.error(`Error analyzing file ${fileName}:`, error);
@@ -97,34 +102,73 @@ function analyzeResultsFile(filePath: string, fileName: string): AnalyzedResult 
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // Read from the actual data/results directory
-    const resultsDir = path.join(process.cwd(), '..', 'data', 'results');
-    
-    if (!fs.existsSync(resultsDir)) {
-      return NextResponse.json({ error: 'Results directory not found' }, { status: 404 });
-    }
-    
-    const files = fs.readdirSync(resultsDir);
-    const jsonFiles = files.filter(file => file.endsWith('.json'));
+    const url = new URL(request.url);
+    const projectId = url.searchParams.get('projectId');
     
     const analyzedResults: AnalyzedResult[] = [];
-    
-    for (const file of jsonFiles) {
-      const filePath = path.join(resultsDir, file);
-      const analyzed = analyzeResultsFile(filePath, file);
-      if (analyzed) {
-        analyzedResults.push(analyzed);
+
+    if (projectId) {
+      // Get results for a specific project
+      const project = await projectManager.loadProjectMetadata(projectId);
+      if (!project) {
+        return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+      }
+
+      const projectResultsDir = projectManager.getProjectResultsDir(projectId);
+      if (fs.existsSync(projectResultsDir)) {
+        const files = fs.readdirSync(projectResultsDir).filter(file => file.endsWith('.json'));
+        
+        for (const file of files) {
+          const filePath = path.join(projectResultsDir, file);
+          const analyzedResult = analyzeResultsFile(filePath, file, projectId, project.name);
+          if (analyzedResult) {
+            analyzedResults.push(analyzedResult);
+          }
+        }
+      }
+    } else {
+      // Get results from all projects + legacy flat structure
+      
+      // 1. Get all projects and their results
+      const projects = await projectManager.listProjects();
+      for (const project of projects) {
+        const projectResultsDir = projectManager.getProjectResultsDir(project.id);
+        if (fs.existsSync(projectResultsDir)) {
+          const files = fs.readdirSync(projectResultsDir).filter(file => file.endsWith('.json'));
+          
+          for (const file of files) {
+            const filePath = path.join(projectResultsDir, file);
+            const analyzedResult = analyzeResultsFile(filePath, file, project.id, project.name);
+            if (analyzedResult) {
+              analyzedResults.push(analyzedResult);
+            }
+          }
+        }
+      }
+
+      // 2. Also include legacy flat results (if any)
+      const legacyResultsDir = path.join(process.cwd(), '..', 'data', 'results');
+      if (fs.existsSync(legacyResultsDir)) {
+        const files = fs.readdirSync(legacyResultsDir).filter(file => file.endsWith('.json'));
+        
+        for (const file of files) {
+          const filePath = path.join(legacyResultsDir, file);
+          const analyzedResult = analyzeResultsFile(filePath, file, 'legacy-project', 'Legacy Project');
+          if (analyzedResult) {
+            analyzedResults.push(analyzedResult);
+          }
+        }
       }
     }
-    
+
     // Sort by processing date (newest first)
     analyzedResults.sort((a, b) => new Date(b.processingDate).getTime() - new Date(a.processingDate).getTime());
-    
+
     return NextResponse.json(analyzedResults);
   } catch (error) {
-    console.error('Error reading results directory:', error);
-    return NextResponse.json({ error: 'Failed to read results' }, { status: 500 });
+    console.error('Error fetching results:', error);
+    return NextResponse.json({ error: 'Failed to fetch results' }, { status: 500 });
   }
 } 

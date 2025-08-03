@@ -13,10 +13,11 @@ interface TerminalMessage {
 interface TerminalProps {
   isOpen: boolean
   onClose: () => void
-  fileName: string
+  fileName?: string
+  data?: any // For new prompt improvement API
 }
 
-export default function Terminal({ isOpen, onClose, fileName }: TerminalProps) {
+export default function Terminal({ isOpen, onClose, fileName, data }: TerminalProps) {
   const [messages, setMessages] = useState<TerminalMessage[]>([])
   const [isRunning, setIsRunning] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -36,12 +37,15 @@ export default function Terminal({ isOpen, onClose, fileName }: TerminalProps) {
     setMessages([])
 
     try {
+      // Use new API format if data is provided, otherwise fall back to old format
+      const requestBody = data ? data : { fileName }
+      
       const response = await fetch('/api/improve-prompt', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ fileName }),
+        body: JSON.stringify(requestBody),
       })
 
       if (!response.ok) {

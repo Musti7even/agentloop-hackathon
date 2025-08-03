@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { spawn } from 'child_process'
 import path from 'path'
-import fs from 'fs'
 import { projectManager } from '@/lib/project-manager'
 
 export async function POST(request: NextRequest) {
   try {
-    const { projectId, resultsFile, messagesPerPersona } = await request.json()
-    
-    if (!projectId || !resultsFile) {
-      return NextResponse.json({ error: 'projectId and resultsFile are required' }, { status: 400 })
+    const { projectId, personaFile, messagesPerPersona } = await request.json()
+
+    if (!projectId || !personaFile) {
+      return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
     }
 
     // Load project metadata to ensure it exists
@@ -18,17 +17,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
+    // Update project status
+    await projectManager.updateProjectStatus(projectId, 'training')
+
     // Ensure project directories exist
     const projectPersonasDir = projectManager.getProjectPersonasDir(projectId)
     const projectResultsDir = projectManager.getProjectResultsDir(projectId)
     
-    if (!fs.existsSync(projectPersonasDir)) {
-      fs.mkdirSync(projectPersonasDir, { recursive: true })
+    if (!require('fs').existsSync(projectPersonasDir)) {
+      require('fs').mkdirSync(projectPersonasDir, { recursive: true })
     }
-    if (!fs.existsSync(projectResultsDir)) {
-      fs.mkdirSync(projectResultsDir, { recursive: true })
+    if (!require('fs').existsSync(projectResultsDir)) {
+      require('fs').mkdirSync(projectResultsDir, { recursive: true })
     }
-    
+
     // Return streaming response to show real-time output
     const stream = new ReadableStream({
       start(controller) {
@@ -36,8 +38,8 @@ export async function POST(request: NextRequest) {
 
         // Send initial message
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-          type: 'info', 
-          message: `Starting prompt improvement for "${project.name}"...`,
+          type: 'info',
+          message: `Starting performance evaluation for "${project.name}"...`,
           timestamp: new Date().toISOString()
         })}\n\n`))
 
@@ -51,7 +53,7 @@ sys.path.append('${path.join(process.cwd(), '..', 'data_gen')}')
 
 # Parameters
 PROJECT_ID = """${projectId}"""
-RESULTS_FILE = """${resultsFile}"""
+PERSONA_FILE = """${personaFile}"""
 MESSAGES_PER_PERSONA = ${messagesPerPersona || 1}
 PROJECT_PERSONAS_DIR = """${projectPersonasDir.replace(/\\/g, '/')}"""
 PROJECT_RESULTS_DIR = """${projectResultsDir.replace(/\\/g, '/')}"""
@@ -59,41 +61,57 @@ PROJECT_RESULTS_DIR = """${projectResultsDir.replace(/\\/g, '/')}"""
 try:
     # Import the module by filename
     import importlib.util
-    spec = importlib.util.spec_from_file_location("prompt_improvement_service", "${path.join(process.cwd(), '..', 'data_gen', 'prompt_improvement_service_app.py')}")
-    prompt_improvement_service = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(prompt_improvement_service)
+    spec = importlib.util.spec_from_file_location("end_to_end_processor", "${path.join(process.cwd(), '..', 'data_gen', 'end_to_end_processor.py')}")
+    end_to_end_processor = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(end_to_end_processor)
     
-    print("Initializing PromptImprovementService...")
-    service = prompt_improvement_service.PromptImprovementService()
+    print("Initializing EndToEndProcessor...")
+    processor = end_to_end_processor.EndToEndProcessor(max_workers=4)
     
     # Override the data directories to point to project folders
-    service.personas_dir = Path(PROJECT_PERSONAS_DIR)
-    service.results_dir = Path(PROJECT_RESULTS_DIR)
+    processor.personas_dir = Path(PROJECT_PERSONAS_DIR)
+    processor.results_dir = Path(PROJECT_RESULTS_DIR)
     
     # Ensure results directory exists
-    service.results_dir.mkdir(parents=True, exist_ok=True)
+    processor.results_dir.mkdir(parents=True, exist_ok=True)
     
-    print(f"Personas directory: {service.personas_dir}")
-    print(f"Results directory: {service.results_dir}")
-    print(f"Processing results file: {RESULTS_FILE}")
+    print(f"Personas directory: {processor.personas_dir}")
+    print(f"Results directory: {processor.results_dir}")
+    print(f"Processing persona file: {PERSONA_FILE}")
     print(f"Messages per persona: {MESSAGES_PER_PERSONA}")
     
-    # Run improvement cycle
-    results = service.run_improvement_cycle(
-        RESULTS_FILE,
+    # Process all personas
+    results = processor.process_all_personas(
+        PERSONA_FILE,
         MESSAGES_PER_PERSONA
     )
     
-    print("\\n" + "="*60)
-    print("PROMPT IMPROVEMENT COMPLETE")
-    print("="*60)
-    print(f"Results saved to: {results['output_file']}")
+    # Save results
+    output_file = processor.save_results(results, PERSONA_FILE)
     
-    # Calculate and display metrics
-    metrics = results['metrics']
-    print(f"Original response rate: {metrics['original']['response_rate']:.1f}%")
-    print(f"Improved response rate: {metrics['improved']['response_rate']:.1f}%")
-    print(f"Improvement: {metrics['improvement']['absolute_improvement']:+.1f} percentage points")
+    # Print summary
+    metadata = results["metadata"]
+    print("\\n" + "="*60)
+    print("PERFORMANCE EVALUATION COMPLETE")
+    print("="*60)
+    print(f"Persona file: {metadata['persona_file']}")
+    print(f"Messages per persona: {metadata['messages_per_persona']}")
+    print(f"Total personas: {metadata['total_personas']}")
+    print(f"Successfully processed: {metadata['successful_personas']}")
+    print(f"Total messages generated: {metadata['total_messages']}")
+    print(f"Results saved to: {output_file}")
+    
+    # Calculate accuracy
+    total_positive = sum(
+        1 for persona_result in results["results"]
+        for message_result in persona_result["messages"]
+        if message_result["decision"]["decision"]
+    )
+    total_messages = metadata["total_messages"]
+    if total_messages > 0:
+        accuracy = (total_positive / total_messages) * 100
+        print(f"Accuracy: {total_positive}/{total_messages} ({accuracy:.1f}%)")
+    
     print("="*60)
     
 except Exception as e:
@@ -104,8 +122,8 @@ except Exception as e:
 `
 
         // Create a temporary Python file to avoid string escaping issues
-        const tempScriptPath = path.join(process.cwd(), '..', 'temp_improve_prompt.py')
-        fs.writeFileSync(tempScriptPath, pythonCode)
+        const tempScriptPath = path.join(process.cwd(), '..', 'temp_evaluate_performance.py')
+        require('fs').writeFileSync(tempScriptPath, pythonCode)
 
         // Spawn Python process
         const pythonProcess = spawn('python3', [tempScriptPath], {
@@ -114,21 +132,21 @@ except Exception as e:
         })
 
         // Handle stdout
-        pythonProcess.stdout?.on('data', (data) => {
-          const message = data.toString()
+        pythonProcess.stdout.on('data', (data) => {
+          const output = data.toString()
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-            type: 'stdout', 
-            message: message.trim(),
+            type: 'stdout',
+            message: output.trim(),
             timestamp: new Date().toISOString()
           })}\n\n`))
         })
 
         // Handle stderr
-        pythonProcess.stderr?.on('data', (data) => {
-          const message = data.toString()
+        pythonProcess.stderr.on('data', (data) => {
+          const output = data.toString()
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-            type: 'stderr', 
-            message: message.trim(),
+            type: 'stderr',
+            message: output.trim(),
             timestamp: new Date().toISOString()
           })}\n\n`))
         })
@@ -137,25 +155,25 @@ except Exception as e:
         pythonProcess.on('close', async (code) => {
           // Clean up temporary file
           try {
-            fs.unlinkSync(tempScriptPath)
+            require('fs').unlinkSync(tempScriptPath)
           } catch (error) {
             console.warn('Could not clean up temp file:', error)
           }
 
           if (code === 0) {
-            // Update project status on success (optional)
+            // Update project status on success
             try {
               await projectManager.updateProjectStatus(projectId, 'ready', {
-                lastImprovementDate: new Date().toISOString()
+                lastEvaluationDate: new Date().toISOString()
               })
             } catch (error) {
               console.error('Error updating project status:', error)
             }
           }
-
+          
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
             type: code === 0 ? 'success' : 'error',
-            message: `Process completed with exit code: ${code}`,
+            message: `Performance evaluation completed with exit code: ${code}`,
             timestamp: new Date().toISOString(),
             finished: true
           })}\n\n`))
@@ -166,7 +184,7 @@ except Exception as e:
         pythonProcess.on('error', (error) => {
           // Clean up temporary file
           try {
-            fs.unlinkSync(tempScriptPath)
+            require('fs').unlinkSync(tempScriptPath)
           } catch (cleanupError) {
             console.warn('Could not clean up temp file:', cleanupError)
           }
@@ -184,17 +202,15 @@ except Exception as e:
 
     return new Response(stream, {
       headers: {
-        'Content-Type': 'text/event-stream',
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Transfer-Encoding': 'chunked',
         'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
+        'Connection': 'keep-alive'
+      }
     })
 
   } catch (error) {
-    console.error('Error starting prompt improvement:', error)
-    return NextResponse.json(
-      { error: 'Failed to start prompt improvement process' }, 
-      { status: 500 }
-    )
+    console.error('Error in evaluate-performance API:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 } 
