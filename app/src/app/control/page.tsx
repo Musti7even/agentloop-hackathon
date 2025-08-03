@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { 
   UserGroupIcon, 
   SparklesIcon, 
@@ -15,17 +15,9 @@ import {
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 import Terminal from '@/components/Terminal'
+import { ProjectMetadata } from '@/lib/project-manager'
 
-interface Project {
-  id: string
-  name: string
-  description: string
-  domain: string
-  status: 'draft' | 'generating_personas' | 'personas_ready' | 'training' | 'ready'
-  createdAt: string
-  personaCount?: number
-  accuracy?: number
-}
+type Project = ProjectMetadata
 
 interface PersonaGenerationForm {
   projectName: string
@@ -35,28 +27,8 @@ interface PersonaGenerationForm {
 }
 
 export default function ControlDashboard() {
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      id: '1',
-      name: 'WorkyAI Cold Outreach',
-      description: 'Cold email generator for workflow automation platform',
-      domain: 'B2B SaaS workflow automation tools',
-      status: 'ready',
-      createdAt: '2025-08-02T10:00:00Z',
-      personaCount: 50,
-      accuracy: 87.5
-    },
-    {
-      id: '2', 
-      name: 'E-commerce Retention',
-      description: 'Customer retention messages for e-commerce platforms',
-      domain: 'E-commerce customer engagement',
-      status: 'personas_ready',
-      createdAt: '2025-08-01T15:30:00Z',
-      personaCount: 30
-    }
-  ])
-
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loading, setLoading] = useState(true)
   const [showNewProjectForm, setShowNewProjectForm] = useState(false)
   const [terminalOpen, setTerminalOpen] = useState(false)
   const [terminalType, setTerminalType] = useState<'personas' | 'improvement'>('personas')
@@ -71,30 +43,59 @@ export default function ControlDashboard() {
 
   const formRef = useRef<HTMLDivElement>(null)
 
-  const handleCreateProject = () => {
+  // Load projects on component mount
+  useEffect(() => {
+    loadProjects()
+  }, [])
+
+  const loadProjects = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/projects')
+      if (response.ok) {
+        const projectsData = await response.json()
+        setProjects(projectsData)
+      }
+    } catch (error) {
+      console.error('Error loading projects:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCreateProject = async () => {
     if (!newProject.projectName || !newProject.domainContext) return
 
-    const project: Project = {
-      id: Date.now().toString(),
-      name: newProject.projectName,
-      description: newProject.description,
-      domain: newProject.domainContext,
-      status: 'draft',
-      createdAt: new Date().toISOString()
-    }
+    try {
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newProject.projectName,
+          description: newProject.description,
+          domain: newProject.domainContext,
+          personaCount: newProject.personaCount
+        })
+      })
 
-    setProjects(prev => [project, ...prev])
-    setShowNewProjectForm(false)
-    setNewProject({
-      projectName: '',
-      description: '',
-      domainContext: '',
-      personaCount: 20
-    })
+      if (response.ok) {
+        const project = await response.json()
+        setProjects(prev => [project, ...prev])
+        setShowNewProjectForm(false)
+        setNewProject({
+          projectName: '',
+          description: '',
+          domainContext: '',
+          personaCount: 20
+        })
+      }
+    } catch (error) {
+      console.error('Error creating project:', error)
+    }
   }
 
   const handleGeneratePersonas = (project: Project) => {
-    // Update project status
+    // Update project status locally (will be updated by API)
     setProjects(prev => prev.map(p => 
       p.id === project.id 
         ? { ...p, status: 'generating_personas' as const }
@@ -106,7 +107,7 @@ export default function ControlDashboard() {
     setTerminalData({
       projectId: project.id,
       domainContext: project.domain,
-      count: newProject.personaCount,
+      count: project.config.personaGeneration.count,
       filename: project.name.toLowerCase().replace(/\s+/g, '_')
     })
     setTerminalOpen(true)
@@ -258,8 +259,26 @@ export default function ControlDashboard() {
           </div>
 
           <div className="p-6">
-            <div className="space-y-4">
-              {projects.map((project) => {
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <span className="ml-3 text-gray-400">Loading projects...</span>
+              </div>
+            ) : projects.length === 0 ? (
+              <div className="text-center py-12">
+                <DocumentTextIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-300 mb-2">No projects yet</h3>
+                <p className="text-gray-500 mb-4">Create your first AI outreach project to get started</p>
+                <button
+                  onClick={() => setShowNewProjectForm(true)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  Create Project
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {projects.map((project) => {
                 const nextAction = getNextAction(project)
                 
                 return (
@@ -316,7 +335,8 @@ export default function ControlDashboard() {
                   </div>
                 )
               })}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -415,12 +435,8 @@ export default function ControlDashboard() {
           isOpen={terminalOpen}
           onClose={() => {
             setTerminalOpen(false)
-            // Update project status to personas_ready when completed
-            setProjects(prev => prev.map(p => 
-              p.id === terminalData.projectId 
-                ? { ...p, status: 'personas_ready' as const, personaCount: terminalData.count }
-                : p
-            ))
+            // Refresh projects to get updated status
+            loadProjects()
           }}
           data={terminalData}
         />

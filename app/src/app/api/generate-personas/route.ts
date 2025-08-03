@@ -1,15 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { spawn } from 'child_process'
 import path from 'path'
+import { projectManager } from '@/lib/project-manager'
 
 export async function POST(request: NextRequest) {
   try {
-    const { domainContext, count, filename } = await request.json()
+    const { projectId, domainContext, count, filename } = await request.json()
     
-    if (!domainContext || !filename) {
+    if (!projectId || !domainContext || !filename) {
       return NextResponse.json({ 
-        error: 'domainContext and filename are required' 
+        error: 'projectId, domainContext and filename are required' 
       }, { status: 400 })
+    }
+
+    // Load project metadata
+    const project = await projectManager.loadProjectMetadata(projectId)
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
+
+    // Update project status
+    await projectManager.updateProjectStatus(projectId, 'generating_personas')
+
+    // Ensure project directories exist
+    const projectPersonasDir = projectManager.getProjectPersonasDir(projectId)
+    if (!require('fs').existsSync(projectPersonasDir)) {
+      require('fs').mkdirSync(projectPersonasDir, { recursive: true })
     }
 
     // Return streaming response to show real-time output
@@ -24,11 +40,19 @@ export async function POST(request: NextRequest) {
           timestamp: new Date().toISOString()
         })}\n\n`))
 
-        // Create a Python script call that imports and uses the DataGenerationService
+        // Create a Python script that safely handles the parameters
         const pythonCode = `
 import sys
 import os
+import json
 sys.path.append('${path.join(process.cwd(), '..', 'data_gen')}')
+
+# Parameters passed safely through environment or arguments
+PROJECT_ID = """${projectId}"""
+DOMAIN_CONTEXT = """${domainContext.replace(/"""/g, '\\"""')}"""
+COUNT = ${count || 20}
+FILENAME = """${filename}"""
+DATA_DIR = """${projectManager.getProjectPersonasDir(projectId).replace(/\\/g, '/')}"""
 
 try:
     # Import the module by filename
@@ -40,15 +64,22 @@ try:
     print("Initializing DataGenerationService...")
     service = datagen_service.DataGenerationService()
     
-    print(f"Generating ${count || 20} personas for domain: ${domainContext}")
+    # Override the data directory to point to project folder
+    service.data_dir = DATA_DIR
+    os.makedirs(service.data_dir, exist_ok=True)
+    print(f"Data directory set to: {service.data_dir}")
+    
+    print(f"Generating {COUNT} personas for project: {PROJECT_ID}")
+    print(f"Domain: {DOMAIN_CONTEXT}")
+    
     personas = service.generate_personas_sync(
-        domain_context="${domainContext}",
-        count=${count || 20},
-        filename="${filename}"
+        domain_context=DOMAIN_CONTEXT,
+        count=COUNT,
+        filename=FILENAME
     )
     
     print(f"Successfully generated {len(personas)} personas!")
-    print("Personas saved to data/personas directory")
+    print(f"Personas saved to project directory: {service.data_dir}")
     
 except Exception as e:
     print(f"Error: {e}")
@@ -57,8 +88,12 @@ except Exception as e:
     sys.exit(1)
 `
 
+        // Create a temporary Python file to avoid string escaping issues
+        const tempScriptPath = path.join(process.cwd(), '..', 'temp_persona_gen.py')
+        require('fs').writeFileSync(tempScriptPath, pythonCode)
+
         // Spawn Python process
-        const pythonProcess = spawn('python3', ['-c', pythonCode], {
+        const pythonProcess = spawn('python3', [tempScriptPath], {
           cwd: path.join(process.cwd(), '..'),
           stdio: ['pipe', 'pipe', 'pipe']
         })
@@ -84,7 +119,25 @@ except Exception as e:
         })
 
         // Handle process completion
-        pythonProcess.on('close', (code) => {
+        pythonProcess.on('close', async (code) => {
+          // Clean up temporary file
+          try {
+            require('fs').unlinkSync(tempScriptPath)
+          } catch (error) {
+            console.warn('Could not clean up temp file:', error)
+          }
+
+          if (code === 0) {
+            // Update project status on success
+            try {
+              await projectManager.updateProjectStatus(projectId, 'personas_ready', {
+                personaCount: count || 20
+              })
+            } catch (error) {
+              console.error('Error updating project status:', error)
+            }
+          }
+          
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
             type: code === 0 ? 'success' : 'error',
             message: `Persona generation completed with exit code: ${code}`,
@@ -96,6 +149,13 @@ except Exception as e:
 
         // Handle process errors
         pythonProcess.on('error', (error) => {
+          // Clean up temporary file
+          try {
+            require('fs').unlinkSync(tempScriptPath)
+          } catch (cleanupError) {
+            console.warn('Could not clean up temp file:', cleanupError)
+          }
+
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
             type: 'error',
             message: `Process error: ${error.message}`,
