@@ -6,7 +6,18 @@ from anthropic import Anthropic
 
 load_dotenv()
 
-def generate_message(user_context: str, persona: str) -> str:
+default_system_prompt = """You are an expert cold outreach specialist who creates highly personalized, compelling messages.
+
+Your goal is to write a cold outreach message that:
+1. Is highly personalized to the recipient
+2. Clearly communicates value proposition
+3. Has a strong call-to-action
+4. Feels authentic and not salesy
+5. Is concise and respectful of their time
+
+Write in a professional but approachable tone. Keep it under 150 words."""
+
+def generate_message(user_context: str, persona: str, system_prompt: str = default_system_prompt, user_prompt: str = None) -> str:
     """
     Generate optimized cold outreach message using user context and persona.
     
@@ -26,31 +37,22 @@ def generate_message(user_context: str, persona: str) -> str:
     if not persona or not persona.strip():
         raise ValueError("Persona (p) cannot be empty")
     
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise ValueError("ANTHROPIC_API_KEY environment variable is required")
-    
-    client = Anthropic(api_key=api_key)
-
-    system_prompt = """You are an expert cold outreach specialist who creates highly personalized, compelling messages.
-
-Your goal is to write a cold outreach message that:
-1. Is highly personalized to the recipient
-2. Clearly communicates value proposition
-3. Has a strong call-to-action
-4. Feels authentic and not salesy
-5. Is concise and respectful of their time
-
-Write in a professional but approachable tone. Keep it under 150 words."""
-
-    user_prompt = f"""USER/STARTUP CONTEXT (C):
+    # Construct user prompt if not provided
+    if user_prompt is None:
+        user_prompt = f"""USER/STARTUP CONTEXT (C):
 {user_context}
 
 TARGET PERSONA (P):
 {persona}
 
 Write a personalized cold outreach message for this specific persona. Make it highly relevant to their situation, pain points, and communication style. Return only the message text."""
-
+    
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise ValueError("ANTHROPIC_API_KEY environment variable is required")
+    
+    client = Anthropic(api_key=api_key)
+    
     try:
         response = client.messages.create(
             model="claude-3-5-sonnet-20241022",

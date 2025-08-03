@@ -1,0 +1,18 @@
+{
+  "id": "legacy-project",
+  "name": "Legacy Project",
+  "description": "Migrated from previous data structure",
+  "domain": "B2B SaaS workflow automation tools",
+  "status": "draft",
+  "createdAt": "2025-08-02T23:50:24.897Z",
+  "updatedAt": "2025-08-02T23:50:24.897Z",
+  "config": {
+    "personaGeneration": {
+      "count": 50,
+      "domainContext": "B2B SaaS workflow automation tools"
+    },
+    "messageGeneration": {
+      "messagesPerPersona": 1
+    }
+  }
+}

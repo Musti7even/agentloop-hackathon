@@ -1,0 +1,19 @@
+{
+  "id": "hinge-outreach-bot",
+  "name": "Hinge Outreach Bot",
+  "description": "sends messages on hinge (compliments) and aims for high CR",
+  "domain": "You are on hinge (the dating app) and try to get the highest possible PR of interesting woman.\n\n",
+  "status": "personas_ready",
+  "createdAt": "2025-08-02T23:53:57.742Z",
+  "updatedAt": "2025-08-03T00:00:05.256Z",
+  "config": {
+    "personaGeneration": {
+      "count": 20,
+      "domainContext": "You are on hinge (the dating app) and try to get the highest possible PR of interesting woman.\n\n"
+    },
+    "messageGeneration": {
+      "messagesPerPersona": 1
+    }
+  },
+  "personaCount": 5
+}
